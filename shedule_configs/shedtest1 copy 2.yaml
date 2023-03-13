@@ -1,0 +1,28 @@
+- cron: '1 */2 * * * 0#2'
+  duration: 124
+  silence:
+    comment: comment
+    createdBy: TeamWhuCreaded
+    matchers:
+    - isEqual: true
+      isRegex: true
+      name: env
+      value: prod
+    - isEqual: true
+      isRegex: true
+      name: env3
+      value: prod
+- cron: '2 */2 * * * 0#3'
+  duration: 124
+  silence:
+    comment: comment2
+    createdBy: TeamWhuCreaded2
+    matchers:
+    - isEqual: true
+      isRegex: true
+      name: host
+      value: prod1
+    - isEqual: true
+      isRegex: true
+      name: env2
+      value: prod1

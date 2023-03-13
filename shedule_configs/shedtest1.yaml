@@ -1,0 +1,28 @@
+- cron: '5 */4 * 8-14 * 6#2'
+  duration: 124
+  silence:
+    comment: comment5
+    createdBy: TeamWhuCreaded
+    matchers:
+    - isEqual: true
+      isRegex: true
+      name: env
+      value: prod5
+    - isEqual: true
+      isRegex: true
+      name: env3
+      value: prod5
+- cron: '6 */4 * 8-14 * 6#2'
+  duration: 124
+  silence:
+    comment: comment6
+    createdBy: TeamWhuCreaded2
+    matchers:
+    - isEqual: true
+      isRegex: true
+      name: env2
+      value: prod6
+    - isEqual: true
+      isRegex: true
+      name: env2
+      value: prod6
