@@ -78,7 +78,7 @@ func (o *YAMLstorage) FillAllShedules() (shedules map[string]models.SheduleSecti
 					return err
 				}
 
-				shedules[shedSection.Token] = *shedSection
+				shedules[shedSection.GetToken()] = *shedSection
 			}
 			return nil
 		})
@@ -92,8 +92,8 @@ func (o *YAMLstorage) fillShedule(fileName string, info os.FileInfo) (*models.Sh
 
 	token := fileName + "|" + info.ModTime().String()
 
-	shedSect.Token = hex.EncodeToString(mmh3.Hash128([]byte(token)).Bytes())
-	shedSect.SectionName = info.Name()
+	shedSect.SetToken(hex.EncodeToString(mmh3.Hash128([]byte(token)).Bytes()))
+	shedSect.SetSectionName(info.Name())
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -103,7 +103,7 @@ func (o *YAMLstorage) fillShedule(fileName string, info os.FileInfo) (*models.Sh
 
 	decoder := yaml.NewDecoder(file)
 
-	err = decoder.Decode(&shedSect.Shedules)
+	err = decoder.Decode(&shedSect)
 	if err != nil {
 		o.logger.Sugar().Errorf("decode file '%v' error: %v", fileName, err)
 		return nil, err
@@ -148,7 +148,6 @@ func (o *YAMLstorage) update(add chan models.SheduleSection, del chan string) er
 	// Add New shedules.
 	for key, val := range newShed {
 		if _, ok := o.sheds[key]; !ok {
-			fmt.Printf("Add new Entry: %v \n", val)
 			add <- val
 
 			o.sheds[key] = true
@@ -158,7 +157,6 @@ func (o *YAMLstorage) update(add chan models.SheduleSection, del chan string) er
 	// Remove non existent Shedules.
 	for key := range o.sheds {
 		if _, ok := newShed[key]; !ok {
-			fmt.Printf("Del Entry: %v \n", key)
 			del <- key
 			delete(o.sheds, key)
 		}

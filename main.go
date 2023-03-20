@@ -28,6 +28,7 @@ func main() {
 
 	fmt.Println(updateInterval)
 	fmt.Println(shedulesDir)
+	fmt.Println(apiurl)
 
 	config := make(map[string]string)
 	config["shedules_dir"] = shedulesDir
@@ -71,7 +72,7 @@ func main() {
 	for {
 		select {
 		case <-hup:
-			log.Info("Received SIGTERM, do nothing...")
+			log.Info("Received SIGHUP, do nothing...")
 		case <-term:
 			log.Info("Received SIGTERM, exiting gracefully...")
 			return

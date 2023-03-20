@@ -45,8 +45,8 @@ func (o *Runner) run() {
 		case <-o.stop:
 			return
 		case shed := <-o.addShed:
-			token := shed.Token
-			o.logger.Info(fmt.Sprintf("Start shedules %v \n with token %v \n", shed, shed.Token))
+			token := shed.GetToken()
+			o.logger.Info(fmt.Sprintf("Start shedules %v \n with token %v \n", shed, shed.GetToken()))
 			o.sheds[token] = &shed
 			o.sheds[token].Run(o.apiURL, o.logger)
 		case token := <-o.delShed:

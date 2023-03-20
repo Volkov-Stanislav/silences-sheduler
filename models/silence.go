@@ -14,12 +14,7 @@ type Silence struct {
 }
 
 func (o Silence) String() string {
-	return fmt.Sprintf("Comment: %v \nCreatedBy: %v \nEndsAt: %v\nStartAt: %v\nMatchers: \n%v\n",
-		o.Comment,
-		o.CreatedBy,
-		o.EndsAt,
-		o.StartsAt,
-		o.Matchers)
+	return fmt.Sprintf("%#v",o)
 }
 
 type SilenceID struct {

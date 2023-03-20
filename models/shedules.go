@@ -19,7 +19,7 @@ type Shedule struct {
 }
 
 func (o Shedule) String() string {
-	return fmt.Sprintf("Cron: %v \nDuration: %v \nSilence: \n%v\n", o.Cron, o.Duration, o.Silence)
+	return fmt.Sprintf("%#v",o)
 }
 
 func (o *Shedule) Run(apiURL string, log *zap.Logger) {

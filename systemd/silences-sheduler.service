@@ -1,0 +1,19 @@
+[Unit]
+Description=SilencesSheduler
+After=syslog.target
+After=network.target
+
+[Service]
+Type=simple
+PIDFile=/opt/silences-sheduler/pid/service.pid
+WorkingDirectory=/opt/silences-sheduler/
+
+User=root
+Group=root
+
+ExecStart=/usr/local/bin/bundle exec service -C /opt/silences-sheduler/silences-sheduler
+TimeoutSec=20
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

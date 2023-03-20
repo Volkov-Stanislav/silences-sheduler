@@ -10,5 +10,5 @@ type Matchers struct {
 }
 
 func (o Matchers) String() string {
-	return fmt.Sprintf("IsEqual: %v \nIsRegex: %v \nName: %v\nValue: %v\n", o.IsEqual, o.IsRegex, o.Name, o.Value)
+	return fmt.Sprintf("%#v",o)
 }

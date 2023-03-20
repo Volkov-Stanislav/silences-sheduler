@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/Volkov-Stanislav/silences-sheduler/models"
+	"github.com/Volkov-Stanislav/silences-sheduler/utils"
 	"github.com/datadog/mmh3"
 	"go.uber.org/zap"
 )
@@ -75,8 +76,8 @@ func (o *CSVstorage) Stop() {
 }
 
 // функция читает все файлы в директории с конфигaми, заполняет shedules из них.
-func (o *CSVstorage) FillAllShedules() (shedules map[string]models.SheduleSection, err error) {
-	shedules = make(map[string]models.SheduleSection)
+func (o *CSVstorage) FillAllShedules() (shedules []models.SheduleSection, err error) {
+	shedules = append(shedules, models.SheduleSection{})
 
 	err = filepath.Walk(o.directoryName,
 		func(path string, info os.FileInfo, err error) error {
@@ -85,13 +86,14 @@ func (o *CSVstorage) FillAllShedules() (shedules map[string]models.SheduleSectio
 			}
 
 			if !info.IsDir() && filepath.Ext(path) == ".csv" {
-				shedSection, err := o.fillShedule(path, info)
+				shedSections, err := o.fillShedule(path, info)
 				if err != nil {
 					return err
 				}
 
-				shedules[shedSection.Token] = *shedSection
+				shedules = append(shedules, shedSections...)
 			}
+
 			return nil
 		})
 
@@ -99,13 +101,8 @@ func (o *CSVstorage) FillAllShedules() (shedules map[string]models.SheduleSectio
 }
 
 // читает отдельный файл с shedules, заполняет из него записи shedules нижнего уровня.
-func (o *CSVstorage) fillShedule(fileName string, info os.FileInfo) (*models.SheduleSection, error) {
-	var shedSect models.SheduleSection
-
-	token := fileName + "|" + info.ModTime().String()
-
-	shedSect.Token = hex.EncodeToString(mmh3.Hash128([]byte(token)).Bytes())
-	shedSect.SectionName = info.Name()
+func (o *CSVstorage) fillShedule(fileName string, info os.FileInfo) ([]models.SheduleSection, error) {
+	var shedSect []models.SheduleSection
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -113,13 +110,19 @@ func (o *CSVstorage) fillShedule(fileName string, info os.FileInfo) (*models.She
 	}
 	defer file.Close()
 
-	o.decode(file, &shedSect)
+	shedSect = o.decode(file, fileName, info) // теперь много секций, с группировкой по смещениям к таймзоне сервера.
 
-	return &shedSect, nil
+	fmt.Printf("After decoding: %v\n", shedSect)
+
+	return shedSect, nil
 }
 
 // Декодирование CSV файла, создание сайленсов по шаблону из него.
-func (o *CSVstorage) decode(file io.Reader, shed *models.SheduleSection) {
+func (o *CSVstorage) decode(file io.Reader,
+	fileName string,
+	info os.FileInfo) []models.SheduleSection {
+	var shedd []models.SheduleSection
+
 	var sheduleTemplate = models.Shedule{
 		Cron:     "",
 		Duration: 10800, // 3 hours in sec.
@@ -127,34 +130,54 @@ func (o *CSVstorage) decode(file io.Reader, shed *models.SheduleSection) {
 			Comment:   "Automatic silence for OS Update 3h",
 			CreatedBy: "SilenceSheduler",
 			Matchers: []models.Matchers{
-				{
-					IsEqual: true,
-					IsRegex: true,
-					Name:    "hostname",
-					Value:   "~",
-				},
+				{IsEqual: true, IsRegex: true, Name: "hostname", Value: "~"},
 			},
 		},
 	}
 
 	csvReader := csv.NewReader(file)
-	i := 0
+	csvReader.Comma = ','
+	csvReader.LazyQuotes = true
 
-	for {
-		line, err := csvReader.Read()
-		if err == io.EOF {
-			break
+	lines, err := csvReader.ReadAll()
+	if err != nil {
+		o.logger.Sugar().Errorf("Error reading CSV file: %v", err)
+		return shedd
+	}
+	// Remove header of CSV file from readed strings.
+	lines = lines[1:]
+	sectOfLines := utils.SorterSplitter(lines).Split()
+
+	var location *time.Location
+
+	for _, shedSect := range sectOfLines {
+		if len(shedSect) > 0 && len(shedSect[0]) > 0 {
+			location = utils.GetLocation(shedSect[0][2])
+		} else {
+			location = time.Local
 		}
 
-		if err != nil {
-			o.logger.Sugar().Errorf("Error reading CSV file: %v", err)
-		}
+		shedd = append(shedd, models.SheduleSection{})
+		token := fileName + "|" + info.ModTime().String() + location.String() // теперь в токене также будет и смещение таймзоны в часах.
+		shedd[len(shedd)-1].SetToken(hex.EncodeToString(mmh3.Hash128([]byte(token)).Bytes()))
+		shedd[len(shedd)-1].SetSectionName(info.Name())
 
-		if i > 0 && len(line) == 3 { // omit header line & bad lines.
+		_, offset := time.Now().In(location).Zone()
+		shedd[len(shedd)-1].TimeOffset = fmt.Sprint(int(offset / 60 / 60))
+
+		for _, line := range shedSect {
 			rec := sheduleTemplate
 
 			// Set host name
-			rec.Silence.Matchers[0].Value = "~" + line[0]
+			rec.Silence.Matchers = []models.Matchers{
+				{
+					IsEqual: true,
+					IsRegex: true,
+					Name:    "hostname",
+					Value:   "",
+				},
+			}
+			rec.Silence.Matchers[0].Value = line[0] + ".+"
 
 			// Set Cron shedule
 			timeArr := strings.Split(line[1], "_")
@@ -174,21 +197,15 @@ func (o *CSVstorage) decode(file io.Reader, shed *models.SheduleSection) {
 				continue
 			}
 
-			utc := 0
-			utcsplit := strings.Split(line[2], ":")
-
-			if len(utcsplit) == 3 {
-				utc, _ = strconv.Atoi(utcsplit[0])
-			}
-
-			rec.Cron = "* * " + fmt.Sprint(hour+utc) + " * * " + dow + "#" + fmt.Sprint(weeknum)
-
-			shed.Shedules = append(shed.Shedules, rec)
+			rec.Cron = "0 0 " + fmt.Sprint(hour) + " * * " + dow + "#" + fmt.Sprint(weeknum)
+			rec.Silence.Comment = line[0] + " | " + line[1] + " | " + line[2]
+			shedd[len(shedd)-1].Shedules = append(shedd[len(shedd)-1].Shedules, rec)
 
 			fmt.Println(rec.String())
 		}
-		i++
 	}
+
+	return shedd
 }
 
 // горутина, в которой идет периодическое чтение конфига, и если требуются обновления идут сигналы в каналы.
@@ -219,25 +236,27 @@ func (o *CSVstorage) run(add chan models.SheduleSection, del chan string) {
 }
 
 func (o *CSVstorage) update(add chan models.SheduleSection, del chan string) error {
-	newShed, err := o.FillAllShedules()
+	allShed, err := o.FillAllShedules()
 	if err != nil {
 		return err
 	}
 
+	newShed := make(map[string]bool)
+
 	// Add New shedules.
-	for key, val := range newShed {
-		if _, ok := o.sheds[key]; !ok {
-			fmt.Printf("Add new Entry: %v \n", val)
+	for _, val := range allShed {
+		if _, ok := o.sheds[val.GetToken()]; !ok {
 			add <- val
 
-			o.sheds[key] = true
+			o.sheds[val.GetToken()] = true
 		}
+
+		newShed[val.GetToken()] = true
 	}
 
 	// Remove non existent Shedules.
 	for key := range o.sheds {
 		if _, ok := newShed[key]; !ok {
-			fmt.Printf("Del Entry: %v \n", key)
 			del <- key
 			delete(o.sheds, key)
 		}
