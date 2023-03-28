@@ -1,3 +1,5 @@
 shedules_dir=shedule_configs
 update_interval=30
 apiurl=http://localhost:9093/api/v2/silences
+metrics_port=32112
+statistic_port=38080

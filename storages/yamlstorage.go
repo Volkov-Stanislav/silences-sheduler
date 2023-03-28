@@ -18,7 +18,6 @@ import (
 type YAMLstorage struct {
 	directoryName  string // Directory with shedules configs.
 	updateInterval int    // Update interval of config from files
-	stop           chan bool
 	sheds          map[string]bool
 	logger         *zap.Logger
 }
@@ -46,23 +45,16 @@ func GetYAMLStorage(config map[string]string, logger *zap.Logger) (*YAMLstorage,
 		logger.Sugar().Errorf("parsing 'update_interval' parameter: %v error: %v", intrvl, err)
 	}
 
-	storage.stop = make(chan bool)
 	storage.sheds = make(map[string]bool)
 	storage.logger = logger
 
 	return &storage, nil
 }
 
-// запускает работу хранилища по первому заполнению и периодическому апдейту данных.
 func (o *YAMLstorage) Run(add chan models.SheduleSection, del chan string) {
 	go o.run(add, del)
 }
 
-func (o *YAMLstorage) Stop() {
-	o.stop <- true
-}
-
-// функция читает все файлы в директории с конфигaми, заполняет shedules из них.
 func (o *YAMLstorage) FillAllShedules() (shedules map[string]models.SheduleSection, err error) {
 	shedules = make(map[string]models.SheduleSection)
 
@@ -125,9 +117,6 @@ func (o *YAMLstorage) run(add chan models.SheduleSection, del chan string) {
 
 	for {
 		select {
-		case <-o.stop:
-			o.logger.Error("singnal STOP received, stop work of YAMLstorage")
-			return
 		case t := <-tim.C:
 			o.logger.Sugar().Infof("Tick on %v", t)
 

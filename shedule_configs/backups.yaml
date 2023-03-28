@@ -1,0 +1,30 @@
+timeoffset: "3"
+shedules:
+  - cron: '0 50 1 * * *'
+    duration: 2400
+    silence:
+      comment: Backups
+      createdBy: Silences sheduler bot
+      matchers:
+      - isEqual: true
+        isRegex: false
+        name: alertname
+        value: DiskLatency1s
+      - isEqual: true
+        isRegex: false
+        name: productname
+        value: ADDS
+  - cron: '1 50 14 * * *'
+    duration: 2400
+    silence:
+      comment: Backups
+      createdBy: Silences sheduler bot
+      matchers:
+        - isEqual: true
+          isRegex: false
+          name: alertname
+          value: DiskLatency1s
+        - isEqual: true
+          isRegex: false
+          name: productname
+          value: ADDS

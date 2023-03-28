@@ -9,6 +9,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Volkov-Stanislav/cron"
+	"github.com/Volkov-Stanislav/silences-sheduler/metrics"
+	"github.com/Volkov-Stanislav/silences-sheduler/stats"
 	"go.uber.org/zap"
 )
 
@@ -16,23 +19,33 @@ type Shedule struct {
 	Cron     string  `yaml:"cron"`     // Crontab defaining time to start silence.
 	Duration int     `yaml:"duration"` // Duration of silence in seconds.
 	Silence  Silence `yaml:"silence"`  // Duration of silence in seconds.
+	entryID  cron.EntryID
 }
 
 func (o Shedule) String() string {
-	return fmt.Sprintf("%#v",o)
+	return fmt.Sprintf("%#v", o)
 }
 
-func (o *Shedule) Run(apiURL string, log *zap.Logger) {
-	o.Silence.StartsAt = time.Now()
-	o.Silence.EndsAt = time.Now().Add(time.Duration(int64(o.Duration) * int64(time.Second)))
+func (o *Shedule) Run(apiURL string, log *zap.Logger, stat *stats.Instance, prom *metrics.Instance) {
+	o.Silence.StartsAt = time.Now().UTC().Add(time.Duration(int64(-10) * int64(time.Minute)))
+	o.Silence.EndsAt = time.Now().UTC().Add(time.Duration(int64(o.Duration) * int64(time.Second)))
 
-	_, err := postAPI(apiURL, o.Silence, log)
+	_, err := postAPI(apiURL, o.Silence, log, stat)
 	if err != nil {
 		log.Sugar().Errorf("Error POST in Alertmanager API:  %v", err)
 	}
+	prom.AddSilencesCounter(1)
 }
 
-func postAPI(url string, data Silence, logger *zap.Logger) (SilenceID, error) {
+func (o *Shedule) GetEntryID() cron.EntryID {
+	return o.entryID
+}
+
+func (o *Shedule) SetEntryID(id cron.EntryID) {
+	o.entryID = id
+}
+
+func postAPI(url string, data Silence, logger *zap.Logger, stat *stats.Instance) (SilenceID, error) {
 	var result SilenceID
 
 	ctx := context.Background()
@@ -74,6 +87,8 @@ func postAPI(url string, data Silence, logger *zap.Logger) (SilenceID, error) {
 	if err := json.Unmarshal(body, &result); err != nil {
 		return result, err
 	}
+
+	stat.AddSheduleRun(fmt.Sprintf("%v;%v;%v;%s;%#v\n", time.Now().UTC(), data.StartsAt, data.EndsAt, data.Comment, data.Matchers))
 
 	return result, nil
 }
