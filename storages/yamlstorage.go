@@ -58,7 +58,7 @@ func (o *YAMLstorage) Run(add chan models.SheduleSection, del chan string) {
 	go o.run(add, del)
 }
 
-// Parse all shedules from yaml file.
+// FillAllShedules parse all shedules from yaml file.
 func (o *YAMLstorage) FillAllShedules() (shedules map[string]models.SheduleSection, err error) {
 	shedules = make(map[string]models.SheduleSection)
 
