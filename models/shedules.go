@@ -36,11 +36,11 @@ func (o *Shedule) Run(apiURL string, log *zap.Logger, stat *stats.Instance, prom
 	if err != nil {
 		log.Sugar().Errorf("Error POST in Alertmanager API:  %v", err)
 	}
-	
+
 	prom.AddSilencesCounter(1)
 }
 
-//  GetEntryID return ID for cron task for this shedule.
+// GetEntryID return ID for cron task for this shedule.
 func (o *Shedule) GetEntryID() cron.EntryID {
 	return o.entryID
 }

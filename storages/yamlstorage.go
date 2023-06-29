@@ -1,4 +1,4 @@
-// Storage that periodicaly load shedules from YAML files in specified derectory.
+// Package storages implements functions that periodicaly load shedules from YAML files in specified derectory.
 package storages
 
 import (

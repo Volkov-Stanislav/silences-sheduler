@@ -25,11 +25,12 @@ func GetLocation(inOffset string) *time.Location {
 			return tLocal
 		}
 	} else {
-		if tOffset, err := strconv.Atoi(inOffset); err != nil {
+		tOffset, err := strconv.Atoi(inOffset)
+		if err != nil {
 			return tLocal
-		} else {
-			TimeOffset = tOffset
 		}
+
+		TimeOffset = tOffset
 	}
 
 	return time.FixedZone("UTC"+fmt.Sprint(TimeOffset), TimeOffset*60*60)
