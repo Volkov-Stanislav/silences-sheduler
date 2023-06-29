@@ -2,6 +2,7 @@ package models
 
 import "fmt"
 
+// Type of Alertmanager matchers.
 type Matchers struct {
 	IsEqual bool   `json:"isEqual" yaml:"isEqual"`
 	IsRegex bool   `json:"isRegex" yaml:"isRegex"`
@@ -10,5 +11,5 @@ type Matchers struct {
 }
 
 func (o Matchers) String() string {
-	return fmt.Sprintf("%#v",o)
+	return fmt.Sprintf("%#v", o)
 }

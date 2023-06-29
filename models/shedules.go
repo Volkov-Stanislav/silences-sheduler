@@ -15,17 +15,19 @@ import (
 	"go.uber.org/zap"
 )
 
+// Shedule define cron task for silence.
 type Shedule struct {
-	Cron     string  `yaml:"cron"`     // Crontab defaining time to start silence.
-	Duration int     `yaml:"duration"` // Duration of silence in seconds.
-	Silence  Silence `yaml:"silence"`  // Duration of silence in seconds.
-	entryID  cron.EntryID
+	Cron     string       `yaml:"cron"`     // Crontab defaining time to start silence.
+	Duration int          `yaml:"duration"` // Duration of silence in seconds.
+	Silence  Silence      `yaml:"silence"`  // Silence define.
+	entryID  cron.EntryID // ID of cron task.
 }
 
 func (o Shedule) String() string {
 	return fmt.Sprintf("%#v", o)
 }
 
+// Run shedule.
 func (o *Shedule) Run(apiURL string, log *zap.Logger, stat *stats.Instance, prom *metrics.Instance) {
 	o.Silence.StartsAt = time.Now().UTC().Add(time.Duration(int64(-10) * int64(time.Minute)))
 	o.Silence.EndsAt = time.Now().UTC().Add(time.Duration(int64(o.Duration) * int64(time.Second)))
@@ -34,13 +36,16 @@ func (o *Shedule) Run(apiURL string, log *zap.Logger, stat *stats.Instance, prom
 	if err != nil {
 		log.Sugar().Errorf("Error POST in Alertmanager API:  %v", err)
 	}
+	
 	prom.AddSilencesCounter(1)
 }
 
+// Return ID for cron task for this shedule.
 func (o *Shedule) GetEntryID() cron.EntryID {
 	return o.entryID
 }
 
+// Set ID for cron task for this shedule.
 func (o *Shedule) SetEntryID(id cron.EntryID) {
 	o.entryID = id
 }
