@@ -212,14 +212,12 @@ func (o *CSVstorage) run(add chan models.SheduleSection, del chan string) {
 	defer tim.Stop()
 
 	for {
-		select {
-		case t := <-tim.C:
-			o.logger.Sugar().Infof("Tick on %v", t)
+		t := <-tim.C
+		o.logger.Sugar().Infof("Tick on %v", t)
 
-			err := o.update(add, del)
-			if err != nil {
-				return
-			}
+		err := o.update(add, del)
+		if err != nil {
+			return
 		}
 	}
 }

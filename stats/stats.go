@@ -1,7 +1,6 @@
 package stats
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -73,7 +72,7 @@ func (o *Instance) serve() error {
 }
 
 func (o *Instance) getStats(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(fmt.Sprint("Data Post Silence;Silence StartsAt;Silence EndsAt;Silence Comment;Silence Matchers\n")))
+	w.Write([]byte("Data Post Silence;Silence StartsAt;Silence EndsAt;Silence Comment;Silence Matchers\n"))
 	// first print old stats (after o.shedCountIndex)
 	for _, stat := range o.stat[o.statsCountIndex:] {
 		if stat == "" {
