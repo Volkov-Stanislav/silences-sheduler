@@ -40,12 +40,12 @@ func (o *Shedule) Run(apiURL string, log *zap.Logger, stat *stats.Instance, prom
 	prom.AddSilencesCounter(1)
 }
 
-// Return ID for cron task for this shedule.
+//  GetEntryID return ID for cron task for this shedule.
 func (o *Shedule) GetEntryID() cron.EntryID {
 	return o.entryID
 }
 
-// Set ID for cron task for this shedule.
+// SetEntryID set ID for cron task for this shedule.
 func (o *Shedule) SetEntryID(id cron.EntryID) {
 	o.entryID = id
 }

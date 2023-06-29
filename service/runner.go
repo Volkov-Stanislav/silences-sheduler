@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Runner main service struct.
 type Runner struct {
 	addShed chan models.SheduleSection
 	delShed chan string
@@ -22,6 +23,7 @@ type Runner struct {
 	prom    *metrics.Instance
 }
 
+// NewRunner return configured Runner instance.
 func NewRunner(apiURL string, logger *zap.Logger, stat *stats.Instance, prom *metrics.Instance) (*Runner, error) {
 	var o Runner
 	o.addShed = make(chan models.SheduleSection)
@@ -36,15 +38,18 @@ func NewRunner(apiURL string, logger *zap.Logger, stat *stats.Instance, prom *me
 	return &o, nil
 }
 
+// Start runner.
 func (o *Runner) Start() {
 	go o.run()
 }
 
+// Stop Runner.
 func (o *Runner) Stop() {
 	fmt.Println("Runner (o *Instance) Stop()")
 	o.stop <- true
 }
 
+// GetChannels return sync channels for  use on another gorutines for syncing.
 func (o *Runner) GetChannels() (add chan models.SheduleSection, del chan string) {
 	return o.addShed, o.delShed
 }

@@ -15,6 +15,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// YAMLstorage implementation persing YAML config files.
 type YAMLstorage struct {
 	directoryName  string // Directory with shedules configs.
 	updateInterval int    // Update interval of config from files
@@ -22,6 +23,7 @@ type YAMLstorage struct {
 	logger         *zap.Logger
 }
 
+// GetYAMLStorage return configured yaml storage.
 func GetYAMLStorage(config map[string]string, logger *zap.Logger) (*YAMLstorage, error) {
 	var (
 		storage YAMLstorage
@@ -51,10 +53,12 @@ func GetYAMLStorage(config map[string]string, logger *zap.Logger) (*YAMLstorage,
 	return &storage, nil
 }
 
+// Run parsing and update checking of yaml files.
 func (o *YAMLstorage) Run(add chan models.SheduleSection, del chan string) {
 	go o.run(add, del)
 }
 
+// Parse all shedules from yaml file.
 func (o *YAMLstorage) FillAllShedules() (shedules map[string]models.SheduleSection, err error) {
 	shedules = make(map[string]models.SheduleSection)
 
@@ -78,7 +82,6 @@ func (o *YAMLstorage) FillAllShedules() (shedules map[string]models.SheduleSecti
 	return
 }
 
-// читает отдельный файл с shedules, заполняет из него записи shedules нижнего уровня.
 func (o *YAMLstorage) fillShedule(fileName string, info os.FileInfo) (*models.SheduleSection, error) {
 	var shedSect models.SheduleSection
 
@@ -104,14 +107,12 @@ func (o *YAMLstorage) fillShedule(fileName string, info os.FileInfo) (*models.Sh
 	return &shedSect, nil
 }
 
-// горутина, в которой идет периодическое чтение конфига, и если требуются обновления идут сигналы в каналы.
 func (o *YAMLstorage) run(add chan models.SheduleSection, del chan string) {
 	err := o.update(add, del)
 	if err != nil {
 		return
 	}
 
-	// цикл чтения с диска, сравнения со текущим конфигом, обновления через каналы руннера.
 	tim := time.NewTicker(time.Second * time.Duration(o.updateInterval))
 	defer tim.Stop()
 

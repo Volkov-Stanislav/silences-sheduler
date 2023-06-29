@@ -7,7 +7,8 @@ import (
 	"time"
 )
 
-// InOffset = "hh24:mm:ss:", mean offset from UTC, func use only hour (hh24). Or, int value interpreted as osset too.
+// GetLocation convert offset into Location.
+// inOffset = "hh24:mm:ss:", mean offset from UTC, func use only hour (hh24). Or, int value interpreted as osset too.
 func GetLocation(inOffset string) *time.Location {
 	tLocal := time.Local
 
@@ -17,7 +18,7 @@ func GetLocation(inOffset string) *time.Location {
 
 	TimeOffset := 0
 	utcsplit := strings.Split(inOffset, ":")
-	
+
 	if len(utcsplit) == 3 {
 		TimeOffset, _ = strconv.Atoi(utcsplit[0])
 		if TimeOffset > 12 || TimeOffset < -12 {

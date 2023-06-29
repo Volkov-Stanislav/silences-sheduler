@@ -8,23 +8,24 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// Metrics instance.
+// Instance is metrics instance.
 type Instance struct {
 	metricsPort    string
 	silencesSetted prometheus.Counter
 	srv            *http.Server
 }
 
-// Return configured metrics instance.
+// NewPrometheusInstance return configured metrics instance.
 func NewPrometheusInstance(metricsPort string) *Instance {
 	var result Instance
 	result.metricsPort = metricsPort
 	result.register()
 	result.srv = &http.Server{Addr: ":" + metricsPort}
+
 	return &result
 }
 
-// Serve metrics instance on port from config.
+// Run serve metrics instance on port from config.
 func (o *Instance) Run() {
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
@@ -49,10 +50,9 @@ func (o *Instance) register() {
 			Help: "How many silences setted since run.",
 		},
 	)
-
 }
 
-// Increase count runned silences.
+// AddSilencesCounter increase count runned silences.
 func (o *Instance) AddSilencesCounter(count float64) {
 	o.silencesSetted.Add(count)
 }

@@ -1,15 +1,18 @@
-package utils
+package utils_test
 
 import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/Volkov-Stanislav/silences-sheduler/utils"
 )
 
 func TestGetLocation(t *testing.T) {
 	type args struct {
 		inOffset string
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -58,9 +61,10 @@ func TestGetLocation(t *testing.T) {
 			want: time.FixedZone("UTC-8", -8*60*60),
 		},
 	}
+	
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetLocation(tt.args.inOffset); !reflect.DeepEqual(got, tt.want) {
+			if got := utils.GetLocation(tt.args.inOffset); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CalcLocation() = %v, want %v", got, tt.want)
 			}
 		})

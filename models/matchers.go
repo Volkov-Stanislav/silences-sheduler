@@ -2,7 +2,7 @@ package models
 
 import "fmt"
 
-// Type of Alertmanager matchers.
+// Matchers type of Alertmanager matchers.
 type Matchers struct {
 	IsEqual bool   `json:"isEqual" yaml:"isEqual"`
 	IsRegex bool   `json:"isRegex" yaml:"isRegex"`

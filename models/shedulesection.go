@@ -11,35 +11,42 @@ import (
 	"go.uber.org/zap"
 )
 
+// SheduleSection set of Shedules from one config file and TimeOffset.
 type SheduleSection struct {
 	Shedules       []Shedule  `yaml:"shedules"`       // Shedules in section.
-	TimeOffset     string     `yaml:"timeoffset"`     // смещение в часах от UTC. может быть как + так и -. ""=local
+	TimeOffset     string     `yaml:"timeoffset"`     // Offset in hours from UTC. May be + and -. ""=local
 	GlobalMatchers []Matchers `yaml:"globalmatchers"` // Matchers added in all silences in SeduleSection
 	cron           *cron.Cron
 	sectionName    string `` // Section name, for filestorage = filename
 	token          string `` // Token for identifiend datachange. (modified date for files for filestorage)
 }
 
+// String interface.
 func (o *SheduleSection) String() string {
 	return fmt.Sprintf("%#v", o)
 }
 
+// GetSectionName return section name.
 func (o *SheduleSection) GetSectionName() string {
 	return o.sectionName
 }
 
+// SetSectionName set section name.
 func (o *SheduleSection) SetSectionName(name string) {
 	o.sectionName = name
 }
 
+// GetToken return token for section.
 func (o *SheduleSection) GetToken() string {
 	return o.token
 }
 
+// SetToken set token for section.
 func (o *SheduleSection) SetToken(token string) {
 	o.token = token
 }
 
+// Run begin executing shedules from section.
 func (o *SheduleSection) Run(apiURL string, logger *zap.Logger, stat *stats.Instance, prom *metrics.Instance) {
 	if logger != nil {
 		log := zapr.NewLogger(logger)
@@ -64,6 +71,7 @@ func (o *SheduleSection) Run(apiURL string, logger *zap.Logger, stat *stats.Inst
 	o.cron.Start()
 }
 
+// Stop executing shedules from section.
 func (o *SheduleSection) Stop() {
 	fmt.Println("(o *SheduleSection) Stop()")
 
@@ -72,6 +80,7 @@ func (o *SheduleSection) Stop() {
 	}
 }
 
+// GetSectionForWeb return formatted text of runned section for web report.
 func (o *SheduleSection) GetSectionForWeb() []string {
 	var (
 		result []string

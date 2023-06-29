@@ -28,6 +28,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// CSVstorage implementation persing CVS config files.
 type CSVstorage struct {
 	directoryName  string // Directory with shedules configs.
 	updateInterval int    // Update interval of config from files
@@ -35,6 +36,7 @@ type CSVstorage struct {
 	logger         *zap.Logger
 }
 
+// GetCSVStorage return configured CVS storage.
 func GetCSVStorage(config map[string]string, logger *zap.Logger) (*CSVstorage, error) {
 	var (
 		storage CSVstorage
@@ -64,10 +66,12 @@ func GetCSVStorage(config map[string]string, logger *zap.Logger) (*CSVstorage, e
 	return &storage, nil
 }
 
+// Run parsing and check of updates cvs files.
 func (o *CSVstorage) Run(add chan models.SheduleSection, del chan string) {
 	go o.run(add, del)
 }
 
+// FillAllShedules parse files.
 func (o *CSVstorage) FillAllShedules() (shedules []models.SheduleSection, err error) {
 	shedules = append(shedules, models.SheduleSection{})
 
@@ -92,7 +96,6 @@ func (o *CSVstorage) FillAllShedules() (shedules []models.SheduleSection, err er
 	return
 }
 
-// читает отдельный файл с shedules, заполняет из него записи shedules нижнего уровня.
 func (o *CSVstorage) fillShedule(fileName string, info os.FileInfo) ([]models.SheduleSection, error) {
 	var shedSect []models.SheduleSection
 
@@ -102,14 +105,13 @@ func (o *CSVstorage) fillShedule(fileName string, info os.FileInfo) ([]models.Sh
 	}
 	defer file.Close()
 
-	shedSect = o.decode(file, fileName, info) // теперь много секций, с группировкой по смещениям к таймзоне сервера.
+	shedSect = o.decode(file, fileName, info)
 
 	fmt.Printf("After decoding: %v\n", shedSect)
 
 	return shedSect, nil
 }
 
-// Декодирование CSV файла, создание сайленсов по шаблону из него.
 func (o *CSVstorage) decode(file io.Reader,
 	fileName string,
 	info os.FileInfo) []models.SheduleSection {
@@ -150,12 +152,12 @@ func (o *CSVstorage) decode(file io.Reader,
 		}
 
 		shedd = append(shedd, models.SheduleSection{})
-		token := fileName + "|" + info.ModTime().String() + location.String() // теперь в токене также будет и смещение таймзоны в часах.
+		token := fileName + "|" + info.ModTime().String() + location.String()
 		shedd[len(shedd)-1].SetToken(hex.EncodeToString(mmh3.Hash128([]byte(token)).Bytes()))
 		shedd[len(shedd)-1].SetSectionName(info.Name())
 
 		_, offset := time.Now().In(location).Zone()
-		shedd[len(shedd)-1].TimeOffset = fmt.Sprint(int(offset / 60 / 60))
+		shedd[len(shedd)-1].TimeOffset = fmt.Sprint(offset / 60 / 60)
 
 		for _, line := range shedSect {
 			rec := sheduleTemplate
@@ -200,14 +202,12 @@ func (o *CSVstorage) decode(file io.Reader,
 	return shedd
 }
 
-// горутина, в которой идет периодическое чтение конфига, и если требуются обновления идут сигналы в каналы.
 func (o *CSVstorage) run(add chan models.SheduleSection, del chan string) {
 	err := o.update(add, del)
 	if err != nil {
 		return
 	}
 
-	// цикл чтения с диска, сравнения со текущим конфигом, обновления через каналы руннера.
 	tim := time.NewTicker(time.Second * time.Duration(o.updateInterval*3600))
 	defer tim.Stop()
 

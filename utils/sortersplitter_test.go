@@ -1,14 +1,16 @@
-package utils
+package utils_test
 
 import (
 	"reflect"
 	"testing"
+
+	"github.com/Volkov-Stanislav/silences-sheduler/utils"
 )
 
 func TestSorterSplitter_Split(t *testing.T) {
 	tests := []struct {
 		name string
-		o    SorterSplitter
+		o    utils.SorterSplitter
 		want [][][]string
 	}{
 		{
